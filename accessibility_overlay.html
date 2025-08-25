@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hỗ Trợ Kéo Tâm By ĐHV</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#0e1620; --muted:#9fb3c8; --accent:#4da3ff; --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#071018,#0b0f14);color:#e6f0fa;font-family:Inter,system-ui,Arial; -webkit-font-smoothing:antialiased;}
+  header{display:flex;gap:10px;align-items:center;padding:12px;position:sticky;top:0;background:linear-gradient(180deg,rgba(8,13,18,.6),rgba(8,13,18,.35));backdrop-filter: blur(6px);z-index:20;}
+  .brand{font-weight:700;margin-right:6px}
+  .panel{max-width:1100px;margin:18px auto;padding:14px;background:var(--panel);border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 30px rgba(2,6,12,.6)}
+  .controls{display:flex;flex-wrap:wrap;gap:10px}
+  label{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+  input[type="range"]{width:140px}
+  .group{background:var(--glass);padding:10px;border-radius:10px;display:flex;gap:8px;align-items:center}
+  button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#05121a;font-weight:600;cursor:pointer}
+  .muted{color:var(--muted);font-size:13px}
+  #overlay {
+    position:fixed; inset:0; pointer-events:none; z-index:9999;
+  }
+  /* crosshair */
+  .crosshair {
+    position:fixed; left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none; z-index:10000;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .crosshair .line{position:absolute;background:rgba(255,255,255,.9);border-radius:2px}
+  .crosshair .h{height:2px;width:40px}
+  .crosshair .v{width:2px;height:40px}
+  .crosshair .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,50,70,1);box-shadow:0 0 8px rgba(255,50,70,.6)}
+  /* small UI at corner */
+  .mini {position:fixed; right:12px; bottom:12px;background:rgba(6,10,14,.7);padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.03);font-size:13px}
+  .row{display:flex;gap:10px;align-items:center}
+  .toggle{appearance:none;width:42px;height:26px;background:#10202b;border-radius:20px;position:relative;cursor:pointer}
+  .toggle:after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;left:3px;top:3px;background:#cfe8ff;transition:.18s}
+  .toggle.on{background:#2b9bff}
+  .toggle.on:after{left:19px;background:white}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  footer{font-size:12px;color:var(--muted);text-align:center;padding:16px}
+  input[type=color]{width:34px;height:28px;border:0;background:transparent;padding:0}
+  /* reduced motion helper */
+  .reduced *{transition:none !important; animation:none !important}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Hỗ Trợ Kéo Tâm By ĐHV</div>
+  <div class="muted">hỗ trợ luyện kỹ năng và giảm rung</div>
+</header>
+
+<main class="panel" role="main" aria-label="Trợ năng">
+  <div class="controls">
+    <div class="group">
+      <label>Fix rung (Giảm Giật Tâm)
+        <div style="display:flex;flex-direction:column;margin-left:8px">
+          <div class="row"><button id="sensorToggle">Bật</button><span class="muted" id="sensorState">Tắt</span></div>
+          <div class="hint">Làm Giảm Giật Tâm Cải Thiện Rung Tâm Cho Ios</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="group">
+      <label>Tối Ưu Thiết Bị 
+        <div style="display:flex;flex-direction:column;margin-left:8px">
+          <div class="row"><button id="perfToggle">Bật</button><span class="muted" id="perfState">Tắt</span></div>
+          <div class="hint">Tối Ưu Máy Mượt Giúp Máy Mạnh Và Giảm Lag Giúp Kéo Tâm Siêu Bá</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="group">
+      <label>Nhẹ Tâm (Giảm Nặng Tâm)
+        <div style="display:flex;flex-direction:column;margin-left:8px">
+          <div class="row"><button id="crossToggle">Bật</button><span class="muted" id="crossState">Tắt</span></div>
+          <div class="hint">Chỉ Hỗ Trợ Kéo Không Ghim Đầu</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="group">
+      <label>Size <input id="sizeRange" type="range" min="8" max="120" step="1" value="40"><span id="sizeVal" class="muted">40</span></label>
+    </div>
+
+    <div class="group">
+      <label>Độ Mờ <input id="opRange" type="range" min="0.15" max="1" step="0.05" value="0.9"><span id="opVal" class="muted">0.90</span></label>
+    </div>
+
+    <div class="group">
+      <label>Color <input id="color" type="color" value="#ff3344"></label>
+    </div>
+
+    <div class="group">
+      <label>Con Trỏ Chuột <input id="smoothRange" type="range" min="0" max="0.98" step="0.02" value="0.85"><span id="smoothVal" class="muted">0.85</span></label>
+    </div>
+
+    <div class="group">
+      <label><button id="pointerLock">Khoá</button></label>
+    </div>
+
+  </div>
+
+  <p class="hint" style="margin-top:12px">
+    Phím tắt: <b>H</b> bật/ẩn Nhẹ Tâm · <b>P</b> bật Tối Ưu · <b>S</b> bật Fix Rung · <b>Esc</b> thoát Khoá.
+  </p>
+
+</main>
+
+<div id="overlay" aria-hidden="true">
+  <div id="crosshair" class="crosshair" style="display:none">
+    <div class="line h"></div>
+    <div class="line v"></div>
+    <div class="dot"></div>
+  </div>
+</div>
+
+<div class="mini" id="miniState">Status: <span id="miniTxt">Idle</span></div>
+
+<footer>
+  Lưu ý: Chỉ Hỗ Trợ Kéo Tâm Không Ban Acc Hay Là Ghim Đầu Như Hack Được!
+</footer>
+
+<script>
+/* Accessibility Overlay JS
+   - sensor stabilizer: low-pass filter on deviceorientation/accel
+   - perf mode: reduces animations and caps visual updates
+   - crosshair: movable overlay, smoothing for pointer (no auto-aim)
+*/
+
+(() => {
+  const sensorBtn = document.getElementById('sensorToggle');
+  const perfBtn = document.getElementById('perfToggle');
+  const crossBtn = document.getElementById('crossToggle');
+  const pointerLockBtn = document.getElementById('pointerLock');
+  const miniTxt = document.getElementById('miniTxt');
+  const sensorState = document.getElementById('sensorState');
+  const perfState = document.getElementById('perfState');
+  const crossState = document.getElementById('crossState');
+
+  const cross = document.getElementById('crosshair');
+  const sizeRange = document.getElementById('sizeRange');
+  const opRange = document.getElementById('opRange');
+  const colorInput = document.getElementById('color');
+  const smoothRange = document.getElementById('smoothRange');
+  const sizeVal = document.getElementById('sizeVal');
+  const opVal = document.getElementById('opVal');
+  const smoothVal = document.getElementById('smoothVal');
+
+  let sensorOn = false, perfOn = false, crossOn = false;
+  let smoothing = parseFloat(smoothRange.value);
+  let crossPos = {x: window.innerWidth/2, y: window.innerHeight/2};
+  let smoothedPos = {...crossPos};
+  let rafHandle = null;
+  let targetFPS = 60;
+  let lastPaint = performance.now();
+
+  function setMini(text){ miniTxt.textContent = text }
+
+  // Crosshair rendering and style
+  function updateCrossStyles(){
+    const size = parseInt(sizeRange.value);
+    sizeVal.textContent = size;
+    const op = parseFloat(opRange.value);
+    opVal.textContent = op.toFixed(2);
+    const color = colorInput.value;
+    const lineEls = cross.querySelectorAll('.line');
+    const dot = cross.querySelector('.dot');
+
+    cross.style.pointerEvents = 'none';
+    cross.style.opacity = op;
+    // center lines
+    const h = cross.querySelector('.h');
+    const v = cross.querySelector('.v');
+    h.style.width = (size) + 'px';
+    h.style.height = Math.max(2, Math.round(size/20)) + 'px';
+    v.style.height = (size) + 'px';
+    v.style.width = Math.max(2, Math.round(size/20)) + 'px';
+    dot.style.width = Math.max(6, Math.round(size/8)) + 'px';
+    dot.style.height = dot.style.width;
+    // apply color
+    const rgba = hexToRgba(color, 1);
+    h.style.background = rgba;
+    v.style.background = rgba;
+    dot.style.background = color;
+    dot.style.boxShadow = `0 0 ${Math.max(6, size/6)}px ${hexToRgba(color,0.6)}`;
+  }
+
+  function hexToRgba(h, a=1){
+    const r = parseInt(h.slice(1,3),16);
+    const g = parseInt(h.slice(3,5),16);
+    const b = parseInt(h.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  sizeRange.addEventListener('input', updateCrossStyles);
+  opRange.addEventListener('input', updateCrossStyles);
+  colorInput.addEventListener('input', updateCrossStyles);
+  smoothRange.addEventListener('input', ()=>{
+    smoothing = parseFloat(smoothRange.value);
+    smoothVal.textContent = smoothing.toFixed(2);
+  });
+
+  // Toggle functions
+  sensorBtn.addEventListener('click', ()=>{ sensorOn = !sensorOn; sensorState.textContent = sensorOn ? 'Bật' : 'Tắt'; sensorBtn.textContent = sensorOn ? 'Tắt' : 'Bật'; setMini(sensorOn ? 'Sensor stabilizer: ON' : 'Sensor stabilizer: OFF'); });
+  perfBtn.addEventListener('click', ()=>{ perfOn = !perfOn; perfState.textContent = perfOn ? 'Bật' : 'Tắt'; perfBtn.textContent = perfOn ? 'Tắt' : 'Bật'; applyPerfMode(perfOn); });
+  crossBtn.addEventListener('click', ()=>{ crossOn = !crossOn; updateCrossVisibility(); });
+  crossState.textContent = 'Bật';
+  sensorState.textContent = 'Tắt';
+  perfState.textContent = 'Tắt';
+
+  function updateCrossVisibility(){
+    if(crossOn){
+      cross.style.display = 'flex';
+      crossState.textContent = 'Bật';
+      crossBtn.textContent = 'Tắt';
+      setMini('Nhẹ Tâm: Bật');
+    } else {
+      cross.style.display = 'none';
+      crossState.textContent = 'Tắt';
+      crossBtn.textContent = 'Bật';
+      setMini('Nhẹ Tâm: tắt');
+    }
+  }
+
+  // Tối Ưu Thiết Bị: reduce animations, cap FPS
+  function applyPerfMode(on){
+    if(on){
+      document.documentElement.classList.add('reduced');
+      targetFPS = 40; // cap to 40 fps
+      perfBtn.textContent = 'Tắt';
+      perfState.textContent = 'Bật';
+      setMini('Tối Ưu Thiết Bị: ON (cap 40fps)');
+    } else {
+      document.documentElement.classList.remove('reduced');
+      targetFPS = 60;
+      perfBtn.textContent = 'Bật';
+      perfState.textContent = 'Tắt';
+      setMini('Tối Ưu Thiết Bị: OFF');
+    }
+  }
+
+  // Smoothing pointer movement for crosshair
+  function onPointerMove(e){
+    if(!crossOn) return;
+    let clientX = e.clientX, clientY = e.clientY;
+    // touch compatibility: if touches exist, use first touch
+    if(e.touches && e.touches[0]) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+    crossPos.x = clientX;
+    crossPos.y = clientY;
+  }
+  window.addEventListener('mousemove', onPointerMove, {passive:true});
+  window.addEventListener('touchmove', onPointerMove, {passive:true});
+
+  // Keyboard controls: arrows move crosshair when visible
+  window.addEventListener('keydown', (ev)=>{
+    if(ev.key === 'h' || ev.key === 'H'){ crossOn = !crossOn; updateCrossVisibility(); }
+    if(ev.key === 'p' || ev.key === 'P'){ perfOn = !perfOn; applyPerfMode(perfOn); }
+    if(ev.key === 's' || ev.key === 'S'){ sensorOn = !sensorOn; sensorState.textContent = sensorOn ? 'Bật' : 'Tắt'; sensorBtn.textContent = sensorOn ? 'Tắt' : 'Bật'; }
+    if(crossOn){
+      const step = 8;
+      if(ev.key === 'ArrowLeft'){ crossPos.x -= step; ev.preventDefault(); }
+      if(ev.key === 'ArrowRight'){ crossPos.x += step; ev.preventDefault(); }
+      if(ev.key === 'ArrowUp'){ crossPos.y -= step; ev.preventDefault(); }
+      if(ev.key === 'ArrowDown'){ crossPos.y += step; ev.preventDefault(); }
+      if(ev.key === 'Escape'){ document.exitPointerLock?.(); }
+    }
+  });
+
+  // Khoá helper
+  pointerLockBtn.addEventListener('click', ()=>{
+    if(document.pointerLockElement) { document.exitPointerLock(); return; }
+    document.body.requestPointerLock?.();
+  });
+
+  document.addEventListener('pointerlockchange', ()=>{
+    const locked = !!document.pointerLockElement;
+    setMini(locked ? 'Khoá: ON' : 'Khoá: OFF');
+    pointerLockBtn.textContent = locked ? 'Thoát Lock' : 'Khoá';
+  });
+
+  // main loop: apply smoothing and update crosshair position at capped FPS
+  function tick(now){
+    if(!lastPaint) lastPaint = now;
+    const dt = now - lastPaint;
+    const minDt = 1000/targetFPS;
+    if(dt < minDt){
+      rafHandle = requestAnimationFrame(tick);
+      return;
+    }
+    lastPaint = now;
+
+    // smoothing low-pass: smoothed = smoothed * a + raw * (1-a) where a = smoothing
+    smoothedPos.x = smoothedPos.x * smoothing + crossPos.x * (1 - smoothing);
+    smoothedPos.y = smoothedPos.y * smoothing + crossPos.y * (1 - smoothing);
+
+    // clamp inside viewport
+    smoothedPos.x = Math.max(0, Math.min(window.innerWidth, smoothedPos.x));
+    smoothedPos.y = Math.max(0, Math.min(window.innerHeight, smoothedPos.y));
+
+    // set transform
+    if(crossOn){
+      cross.style.transform = `translate(${smoothedPos.x - 0}px, ${smoothedPos.y - 0}px) translate(-50%,-50%)`;
+    }
+
+    rafHandle = requestAnimationFrame(tick);
+  }
+
+  // start RAF
+  let lastPaint = performance.now();
+  rafHandle = requestAnimationFrame(tick);
+
+  // Sensor stabilizer (deviceorientation) - low-pass filter to reduce jitter
+  let sensorFilter = {alpha:0, beta:0, gamma:0};
+  let sensorA = 0.85; // filter coefficient (closer to 1 = heavier smoothing)
+  function handleDevice(e){
+    if(!sensorOn) return;
+    // some devices provide rotationRate; prefer devicemotion rotationRate if available
+    const a = e.alpha ?? 0, b = e.beta ?? 0, g = e.gamma ?? 0;
+    sensorFilter.alpha = sensorFilter.alpha * sensorA + a * (1 - sensorA);
+    sensorFilter.beta  = sensorFilter.beta  * sensorA + b * (1 - sensorA);
+    sensorFilter.gamma = sensorFilter.gamma * sensorA + g * (1 - sensorA);
+    // Optionally apply to page: gentle transform to counteract device tilt
+    document.documentElement.style.transform = `translate3d(0,0,0) rotateX(${(-sensorFilter.beta/50).toFixed(3)}deg) rotateY(${(sensorFilter.gamma/50).toFixed(3)}deg)`;
+  }
+  window.addEventListener('deviceorientation', handleDevice, {passive:true});
+
+  // ensure we reset transform when sensor off
+  setInterval(()=> {
+    if(!sensorOn){
+      document.documentElement.style.transform = '';
+    }
+  }, 200);
+
+  // helper: disble heavy backgrounds & animations proactively
+  function disableHeavyElements(){
+    // remove background images, large videos, animated gifs
+    document.querySelectorAll('video,canvas,iframe,img').forEach(el=>{
+      // reduce autoplay videos
+      if(el.tagName === 'VIDEO'){
+        try{ el.pause(); el.preload = 'none'; }catch(e){}
+      }
+      if(el.tagName === 'IMG'){
+        // optionally reduce decode size by setting srcset? skip to avoid changing content
+      }
+    });
+    // pause CSS animations by adding reduced class (we already have .reduced)
+  }
+
+  // apply perf once when toggled
+  function applyPerfMode(on){
+    if(on){
+      document.documentElement.classList.add('reduced');
+      disableHeavyElements();
+    } else {
+      document.documentElement.classList.remove('reduced');
+    }
+  }
+
+  // small safety: do not allow script to read clipboard or auto click
+  // initialize styles
+  updateCrossStyles();
+
+  // initial mini state
+  setMini('Idle');
+
+  // small UX: if user clicks mini, center crosshair
+  document.getElementById('miniState').addEventListener('click', ()=>{
+    crossPos.x = window.innerWidth/2; crossPos.y = window.innerHeight/2; smoothedPos = {...crossPos};
+    setMini('Crosshair centered');
+  });
+
+  // cleanup on unload
+  window.addEventListener('beforeunload', ()=>{
+    cancelAnimationFrame(rafHandle);
+  });
+})();
+</script>
+</body>
+</html>
